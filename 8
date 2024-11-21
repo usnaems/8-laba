@@ -1,0 +1,103 @@
+import tkinter as tk
+
+
+class CircleArc:
+    def __init__(self, canvas, center, radius, start_angle, end_angle, color='blue'):
+        self.canvas = canvas
+        self.center = center  # Tuple (x, y)
+        self.radius = radius
+        self.start_angle = start_angle  # В градусах
+        self.end_angle = end_angle
+        self.color = color
+        self.arc_id = self.draw_arc()
+
+    def draw_arc(self):
+        x1 = self.center[0] - self.radius
+        y1 = self.center[1] - self.radius
+        x2 = self.center[0] + self.radius
+        y2 = self.center[1] + self.radius
+
+        # Если конец дуги меньше начала, вращаем его на 360 градусов
+        extent = (self.end_angle - self.start_angle) % 360
+
+        # Если угол поворота равен 0, не рисуем ничего
+        if extent == 0:
+            return None  # Не нужно рисовать круг, если угол равен 0
+
+        return self.canvas.create_arc(
+            x1, y1, x2, y2, start=self.start_angle,
+            extent=extent,
+            outline=self.color, width=2
+        )
+
+    def set_color(self, color):
+        self.color = color
+        self.canvas.itemconfig(self.arc_id, outline=self.color)
+
+    def move(self, dx, dy):
+        # Обновляем центр дуги
+        self.center = (self.center[0] + dx, self.center[1] + dy)
+        # Переопределяем дугу с новым центром
+        self.redraw_arc()
+
+    def rotate(self, angle):
+        # Поворачиваем дугу
+        self.start_angle = (self.start_angle + angle) % 360
+        self.end_angle = (self.end_angle + angle) % 360
+        self.redraw_arc()
+
+    def redraw_arc(self):
+        # Удаляем предыдущую дугу только если она была нарисована
+        if self.arc_id is not None:
+            self.canvas.delete(self.arc_id)
+
+            # Рисуем снова дугу после перемещения или поворота
+        self.arc_id = self.draw_arc()
+
+
+class Application(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Circle Arc with Tkinter")
+
+        self.canvas = tk.Canvas(self, width=600, height=600, bg='white')
+        self.canvas.pack()
+
+        # Создаем дугу
+        self.arc = CircleArc(self.canvas, center=(300, 300), radius=100, start_angle=30, end_angle=120, color='blue')
+
+        # Кнопки для управления цветом
+        self.color_button = tk.Button(self, text="Change Color", command=self.change_color)
+        self.color_button.pack(pady=5)
+
+        self.rotate_button = tk.Button(self, text="Rotate Arc", command=self.rotate_arc)
+        self.rotate_button.pack(pady=5)
+
+        # Frame для кнопок
+        button_frame = tk.Frame(self)
+        button_frame.pack(pady=10)
+
+        # Кнопки управления для перемещения, расположенные горизонтально
+        self.move_left_button = tk.Button(button_frame, text="←", command=lambda: self.arc.move(-10, 0))
+        self.move_left_button.pack(side=tk.LEFT, padx=5)
+
+        self.move_up_button = tk.Button(button_frame, text="↑", command=lambda: self.arc.move(0, -10))
+        self.move_up_button.pack(side=tk.LEFT, padx=5)
+
+        self.move_down_button = tk.Button(button_frame, text="↓", command=lambda: self.arc.move(0, 10))
+        self.move_down_button.pack(side=tk.LEFT, padx=5)
+
+        self.move_right_button = tk.Button(button_frame, text="→", command=lambda: self.arc.move(10, 0))
+        self.move_right_button.pack(side=tk.LEFT, padx=5)
+
+    def change_color(self):
+        new_color = 'red' if self.arc.color == 'blue' else 'blue'  # Переключаем цвет
+        self.arc.set_color(new_color)
+
+    def rotate_arc(self):
+        self.arc.rotate(15)  # Поворачиваем дугу на 15 градусов
+
+
+if __name__ == "__main__":
+    app = Application()
+    app.mainloop()
